@@ -15,6 +15,14 @@ try {
 $blog_id = @$_GET["a"];
 $sql = "SELECT * FROM blogs WHERE id = $blog_id";
 $res = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
+
+try {
+  $sql_comments = "SELECT * FROM blog.comments WHERE blog_id = $blog_id ORDER BY created_at DESC";
+  $stmh = $pdo->prepare($sql_comments);
+  $stmh->execute();
+} catch (PDOException $Exception) {
+  die('接続エラー：' . $Exception->getMessage());
+}
 ?>
 
 
@@ -47,14 +55,6 @@ $res = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
                       </div>
                     </div>
                     <div class="text-right mt-6">
-                      <a href="/edit.php?a=<?= htmlspecialchars($_GET["a"]) ?>">
-                        <button class="bg-yellow-300 text-black mx-auto active:bg-yellow-400 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1" type="submit" style="transition: all 0.15s ease 0s;">編集
-                        </button>
-                      </a>
-                      <a href="/destroy.php?a=<?= htmlspecialchars($_GET["a"]) ?>">
-                        <button class="bg-yellow-300 text-black mx-auto active:bg-yellow-400 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1" type="submit" style="transition: all 0.15s ease 0s;">削除
-                        </button>
-                      </a>
                       <a href="/index.php">
                         <button class="bg-yellow-300 text-black mx-auto active:bg-yellow-400 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1" type="submit" style="transition: all 0.15s ease 0s;">一覧ページへ
                         </button>
@@ -62,6 +62,49 @@ $res = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
                     </div>
                   </div>
                 </div>
+
+                <div class="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-white">
+                  <div class="flex-auto p-5 lg:p-10">
+                    <h4 class="text-2xl mb-4 text-black font-semibold">この投稿にコメントしますか？</h4>
+                    <form id="form" action="/comment_add.php" method="post">
+                      <div class="relative w-full mb-3">
+                        <label class="block uppercase text-gray-700 text-xs font-bold mb-2" for="commenter_name">コメント名</label><input type="text" name="commenter_name" id="commenter_name" class="border-0 px-3 py-3 rounded text-sm shadow w-full
+                    bg-gray-300 placeholder-black text-gray-800 outline-none focus:bg-gray-400" placeholder=" " style="transition: all 0.15s ease 0s;" required />
+                      </div>
+                      <div class="relative w-full mb-3">
+                        <label class="block uppercase text-gray-700 text-xs font-bold mb-2" for="comment_content">内容</label><textarea maxlength="300" name="comment_content" id="comment_content" rows="4" cols="80" class="border-0 px-3 py-3 bg-gray-300 placeholder-black text-gray-800 rounded text-sm shadow focus:outline-none w-full" placeholder="" required></textarea>
+                      </div>
+                      <div class="text-center mt-6">
+                        <button id="submit" class="bg-yellow-300 text-black text-center mx-auto active:bg-yellow-400 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1" type="submit" style="transition: all 0.15s ease 0s;">コメント
+                        </button>
+                      </div>
+                      <input type="hidden" name="blog_id" value="<?php print($blog_id); ?>">
+                    </form>
+                  </div>
+                </div>
+
+                <h4 class="text-2xl mb-4 text-black font-semibold">コメント一覧</h4>
+                <?php
+                while ($row_comments = $stmh->fetch(PDO::FETCH_ASSOC)) {
+                ?>
+                  <div class="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-white">
+                    <div class="flex-auto p-5 lg:p-10">
+                      <div class="relative w-full mb-3">
+                        <p class="block uppercase text-gray-700 text-xs font-bold mb-2" for="commenter_name">コメント名</p>
+                        <p type="text" class="border-0 px-3 py-3 rounded text-sm shadow w-full
+                    bg-gray-300 placeholder-black text-gray-800 outline-none focus:bg-gray-400" style="transition: all 0.15s ease 0s;"><?= htmlspecialchars($row_comments['commenter_name']) ?></p>
+                      </div>
+                      <div class="relative w-full mb-3">
+                        <p class="block uppercase text-gray-700 text-xs font-bold mb-2" for="comment_content">内容</p>
+                        <p maxlength="300" rows="4" cols="80" class="border-0 px-3 py-3 bg-gray-300 placeholder-black text-gray-800 rounded text-sm shadow focus:outline-none w-full"><?= htmlspecialchars($row_comments['comments']) ?></p>
+                      </div>
+                    </div>
+                  </div>
+                <?php
+                }
+                $pdo = null;
+                ?>
+
               </div>
             </div>
           </div>
