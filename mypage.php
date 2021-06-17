@@ -1,31 +1,26 @@
 <?php
 session_start();
-if (!isset($_SESSION['id'])) header("Location: ./login_form.php");
+if (empty($_SESSION['id'])) {
+  header("Location: ./login_form.php");
+  exit;
+}
+$errors = $_SESSION['errors'] ?? [];
+unset($_SESSION['errors']);
 
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
-$db_account_name = "blog";
-$db_account_password = "blog";
-try {
-  $pdo = new PDO($dsn, $db_account_name, $db_account_password);
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-} catch (PDOException $Exception) {
-  die('接続エラー：' . $Exception->getMessage());
-}
-try {
-  $sql = "SELECT * FROM blogs ORDER BY created_at DESC";
-  $statement = $pdo->prepare($sql);
-  $statement->execute();
-} catch (PDOException $Exception) {
-  die('接続エラー：' . $Exception->getMessage());
-}
+$dbUserName = "blog";
+$dbPassword = "blog";
+$pdo = new PDO($dsn, $dbUserName, $dbPassword);
+
+$sql = "SELECT * FROM blogs ORDER BY created_at DESC";
+$statement = $pdo->prepare($sql);
+$statement->execute();
 
 $blogsInfoList = $statement->fetchAll(PDO::FETCH_ASSOC);
 $myBlogsInfoList = [];
 foreach ($blogsInfoList as $blogsInfo) {
   if ($_SESSION['id'] == $blogsInfo['user_id']) $myBlogsInfoList[] = $blogsInfo;
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -33,30 +28,37 @@ foreach ($blogsInfoList as $blogsInfo) {
 
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=, initial-scale=1.0">
   <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
   <title>マイページ</title>
 </head>
 
-<div class="w-full">
-  <nav class="bg-white shadow-lg">
-    <div class="md:flex items-center justify-between py-2 px-8 md:px-12">
-      <div class="flex justify-between items-center">
-        <div class="text-2xl font-bold text-gray-800 md:text-3xl">
-          <h1><?php echo $_SESSION['user_name']; ?></h1>
+<header>
+  <div class="w-full">
+    <nav class="bg-white shadow-lg">
+      <div class="md:flex items-center justify-between py-2 px-8 md:px-12">
+        <div class="flex justify-between items-center">
+          <div class="text-2xl font-bold text-gray-800 md:text-3xl">
+            <h1><?php echo $_SESSION['user_name']; ?></h1>
+          </div>
+          <div class="md:hidden">
+          </div>
         </div>
-        <div class="md:hidden">
+        <div class="flex flex-col md:flex-row hidden md:block -mx-2">
+          <a href="./index.php" class="text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium py-2 px-2 md:mx-2">一覧ページ</a>
+          <a href="./logout.php" class="text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium py-2 px-2 md:mx-2">ログアウト</a>
         </div>
       </div>
-      <div class="flex flex-col md:flex-row hidden md:block -mx-2">
-        <a href="./index.php" class="text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium py-2 px-2 md:mx-2">一覧ページ</a>
-        <a href="./logout.php" class="text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium py-2 px-2 md:mx-2">ログアウト</a>
-      </div>
-    </div>
-  </nav>
-</div>
+    </nav>
+  </div>
+</header>
 
 <body>
   <div class="blogs__wraper bg-green-300  py-20 px-20">
+    <?php foreach ($errors as $error) : ?>
+      <p><?php echo $error; ?></p>
+    <?php endforeach; ?>
     <div class="ml-8 mb-12">
       <h2 class="mb-2 px-2 text-6xl font-bold text-green-800">マイページ</h2>
     </div>

@@ -1,5 +1,9 @@
 <?php
 session_start();
-$_SESSION = array(); //セッションの中身をすべて削除
-session_destroy(); //セッションを破壊
+$_SESSION = array();
+if (ini_get("session.use_cookies")) {
+    setcookie(session_name(), '', time() - 42000, '/');
+}
+session_destroy();
 header("Location: ./login_form.php");
+exit;

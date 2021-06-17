@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 $user_name = $_POST['user_name'];
 $mail = $_POST['mail'];
 $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -7,12 +8,7 @@ $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
 $dbUserName = "blog";
 $dbPassword = "blog";
-try {
-    $pdo = new PDO($dsn, $dbUserName, $dbPassword);
-} catch (PDOException $e) {
-    echo "DB接続エラー";
-    die;
-}
+$pdo = new PDO($dsn, $dbUserName, $dbPassword);
 
 $sql = "SELECT * FROM users WHERE mail = :mail";
 $statement = $pdo->prepare($sql);
@@ -30,7 +26,7 @@ if ($member['mail'] === $mail) {
     $statement->bindValue(':mail', $mail);
     $statement->bindValue(':password', $password);
     $statement->execute();
-    $_SESSION['register'] = '新規登録が完了しました';
+    $_SESSION['messeages'][] = '新規登録が完了しました';
     header("Location: ./login_form.php");
     exit;
 }

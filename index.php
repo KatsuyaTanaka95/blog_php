@@ -1,17 +1,15 @@
 <?php
 session_start();
-if (!isset($_SESSION['id'])) header("Location: ./login_form.php");
+if (empty($_SESSION['id'])) {
+  header("Location: ./login_form.php");
+  exit;
+}
 
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
-$db_account_name = "blog";
-$db_account_password = "blog";
-try {
-  $pdo = new PDO($dsn, $db_account_name, $db_account_password);
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-} catch (PDOException $Exception) {
-  die('接続エラー：' . $Exception->getMessage());
-}
+$dbUserName = "blog";
+$dbPassword = "blog";
+$pdo = new PDO($dsn, $dbUserName, $dbPassword);
+
 $keyword = filter_input(INPUT_GET, 'keyword', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 $inputOrder = filter_input(INPUT_GET, 'order', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 $order = $inputOrder ?? 'DESC';
@@ -23,18 +21,14 @@ if (!empty($keyword)) {
 $urlDesc = $baseUrl . '&order=DESC';
 $urlAsc = $baseUrl . '&order=ASC';
 
-try {
-  $sql = "SELECT * FROM blogs";
-  if (!empty($keyword)) {
-    $sql .= " WHERE content like :keyword";
-  }
-  $sql .= " ORDER BY created_at " . $order;
-  $statement = $pdo->prepare($sql);
-  $statement->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
-  $statement->execute();
-} catch (PDOException $Exception) {
-  die('接続エラー：' . $Exception->getMessage());
+$sql = "SELECT * FROM blogs";
+if (!empty($keyword)) {
+  $sql .= " WHERE content like :keyword";
 }
+$sql .= " ORDER BY created_at " . $order;
+$statement = $pdo->prepare($sql);
+$statement->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
+$statement->execute();
 
 $blogInfoList = $statement->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -44,9 +38,12 @@ $blogInfoList = $statement->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=, initial-scale=1.0">
   <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
   <title>blog一覧</title>
 </head>
+
 <header>
   <div class="w-full">
     <nav class="bg-white shadow-lg">

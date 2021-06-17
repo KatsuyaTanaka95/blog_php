@@ -1,37 +1,33 @@
 <?php
-$dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
-$db_account_name = "blog";
-$db_account_password = "blog";
-try {
-  $pdo = new PDO($dsn, $db_account_name, $db_account_password, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'));
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-  $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-  exit('接続できませんでした。理由：' . $e->getMessage());
-}
+session_start();
 
-$user_id = $_POST['blog_id'];
+$dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
+$dbUserName = "blog";
+$dbPassword = "blog";
+$pdo = new PDO($dsn, $dbUserName, $dbPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'));
+
+$user_id = $_SESSION['id'];
 $blog_title = $_POST['blog_title'];
 $content = $_POST['content'];
 
 $sql = "
-    UPDATE
-      blogs
-    SET
-      title = ?,
-      content = ?
-    WHERE
-      id = ?
-  ";
+INSERT INTO
+blogs(
+    user_id,
+    title,
+    content
+)
+VALUES(?,?,?)
+";
 
-$params = array($blog_title, $content, $user_id);
+$params = array($user_id, $blog_title, $content);
 try {
   $statement = $pdo->prepare($sql);
   $statement->execute($params);
-  header("Location: ./myarticledetail.php?id=" . $user_id);
+  header("Location: ./mypage.php");
+  exit;
 } catch (PDOException $e) {
-  // exit('接続できませんでした。理由：' . $e->getMessage());
-  $_SESSION['error'] = 'ブログ記事の編集に失敗しました。';
-  header("Location: ./edit.php");
+  $_SESSION['errors'][] = 'ブログ記事の登録に失敗しました。';
+  header("Location: ./create.php");
+  exit;
 }

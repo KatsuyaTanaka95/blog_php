@@ -1,21 +1,17 @@
 <?php
 session_start();
-if (isset($_SESSION['error'])) {
-  echo $_SESSION['error'];
-  $_SESSION['error'] = "";
+if (empty($_SESSION['id'])) {
+  header("Location: ./login_form.php");
+  exit;
 }
 
+$errors = $_SESSION['errors'] ?? [];
+unset($_SESSION['errors']);
+
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
-$db_account_name = "blog";
-$db_account_password = "blog";
-try {
-  $pdo = new PDO($dsn, $db_account_name, $db_account_password, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'));
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-  $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-  exit('接続できませんでした。理由：' . $e->getMessage());
-}
+$dbUserName = "blog";
+$dbPassword = "blog";
+$pdo = new PDO($dsn, $dbUserName, $dbPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'));
 
 $blog_id = @$_GET["id"];
 $sql = "SELECT * FROM blogs WHERE id = $blog_id";
@@ -23,12 +19,13 @@ $blogInfomation = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=, initial-scale=1.0">
   <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="blog.css">
   <title>記事編集フォーム</title>
 </head>
 
@@ -42,6 +39,9 @@ $blogInfomation = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
               <div class="w-full lg:w-6/12 px-4">
                 <div class="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-white">
                   <div class="flex-auto p-5 lg:p-10">
+                    <?php foreach ($errors as $error) : ?>
+                      <p><?php echo $error; ?></p>
+                    <?php endforeach; ?>
                     <form id="form" action="./update.php" method="post">
                       <div class="relative w-full mb-3">
                         <label class="block uppercase text-gray-700 text-xs font-bold mb-2" for="blog_title">タイトル</label>
