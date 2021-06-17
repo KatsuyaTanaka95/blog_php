@@ -1,6 +1,10 @@
 <?php
 session_start();
-// データベース接続
+if (isset($_SESSION['error'])) {
+  echo $_SESSION['error'];
+  $_SESSION['error'] = "";
+}
+
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
 $db_account_name = "blog";
 $db_account_password = "blog";
@@ -15,15 +19,17 @@ try {
 
 $blog_id = @$_GET["id"];
 $sql = "SELECT * FROM blogs WHERE id = $blog_id";
-$res = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
+$blogInfo = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
 
 try {
   $sql_comments = "SELECT * FROM blog.comments WHERE blog_id = $blog_id ORDER BY created_at DESC";
-  $stmh = $pdo->prepare($sql_comments);
-  $stmh->execute();
+  $statement = $pdo->prepare($sql_comments);
+  $statement->execute();
 } catch (PDOException $Exception) {
   die('接続エラー：' . $Exception->getMessage());
 }
+
+$commentsInfoList = $statement->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 
@@ -37,13 +43,6 @@ try {
 </head>
 
 <body>
-
-  <?php
-  if (isset($_SESSION['error'])) {
-    echo $_SESSION['error'];
-    $_SESSION['error'] = "";
-  }
-  ?>
   <section>
     <div class="bg-green-300 text-white py-20">
       <div class="container mx-auto my-6 md:my-24">
@@ -52,14 +51,14 @@ try {
             <div class="flex flex-wrap justify-center">
               <div class="w-full lg:w-6/12 px-4">
                 <div class="">
-                  <h2 class="mb-12 text-6xl text-center font-bold text-green-800"><?php print(nl2br($res['title'])); ?></h2>
+                  <h2 class="mb-12 text-6xl text-center font-bold text-green-800"><?php print(nl2br($blogInfo['title'])); ?></h2>
                 </div>
                 <div class="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-white">
                   <div class="flex-auto p-5 lg:p-10">
                     <div class="relative w-full mb-3">
-                      <label class="block uppercase text-gray-700 text-xs font-bold mb-2" for="content">投稿日時: <?php print(nl2br($res['created_at'])); ?></label>
+                      <label class="block uppercase text-gray-700 text-xs font-bold mb-2" for="content">投稿日時: <?php print(nl2br($blogInfo['created_at'])); ?></label>
                       <div class="border-0 px-3 py-3 bg-gray-300 text-gray-800 rounded text-sm shadow focus:outline-none w-full">
-                        <?php print(nl2br($res['content'])); ?>
+                        <?php print(nl2br($blogInfo['content'])); ?>
                       </div>
                     </div>
                     <div class="text-right mt-6">
@@ -92,23 +91,17 @@ try {
                 </div>
 
                 <h4 class="text-2xl mb-4 text-black font-semibold">コメント一覧</h4>
-                <?php
-                while ($row_comments = $stmh->fetch(PDO::FETCH_ASSOC)) {
-                ?>
+                <?php foreach ($commentsInfoList as $commentsInfo) : ?>
                   <div class="border-b-2 border-solid	py-2.5 text-black">
                     <div class="relative w-full mb-3">
-                      <p class="mb-2.5 leading-tight text-xl break-all font-normal"><?= htmlspecialchars($row_comments['comments']) ?></p>
+                      <p class="mb-2.5 leading-tight text-xl break-all font-normal"><?= htmlspecialchars($commentsInfo['comments']) ?></p>
                     </div>
                     <div class="relative w-full mb-3">
-                      <p class="text-sm"><?= htmlspecialchars($row_comments['created_at']) ?></p>
-                      <p class="text-sm"><?= htmlspecialchars($row_comments['commenter_name']) ?></p>
+                      <p class="text-sm"><?= htmlspecialchars($commentsInfo['created_at']) ?></p>
+                      <p class="text-sm"><?= htmlspecialchars($commentsInfo['commenter_name']) ?></p>
                     </div>
                   </div>
-                <?php
-                }
-                $pdo = null;
-                ?>
-
+                <?php endforeach; ?>
               </div>
             </div>
           </div>

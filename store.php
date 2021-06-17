@@ -1,7 +1,4 @@
 <?php
-session_start();
-
-// データベース接続
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
 $db_account_name = "blog";
 $db_account_password = "blog";
@@ -13,29 +10,28 @@ try {
 } catch (PDOException $e) {
   exit('接続できませんでした。理由：' . $e->getMessage());
 }
-// Postされたものを定義
-$user_id = $_SESSION['id'];
+
+$user_id = $_POST['blog_id'];
 $blog_title = $_POST['blog_title'];
 $content = $_POST['content'];
 
-// Insert
 $sql = "
-INSERT INTO
-blogs(
-    user_id,
-    title,
-    content
-)
-VALUES(?,?,?)
-";
+    UPDATE
+      blogs
+    SET
+      title = ?,
+      content = ?
+    WHERE
+      id = ?
+  ";
 
-$params = array($user_id, $blog_title, $content);
+$params = array($blog_title, $content, $user_id);
 try {
   $statement = $pdo->prepare($sql);
   $statement->execute($params);
-  header("Location: ./mypage.php");
+  header("Location: ./myarticledetail.php?id=" . $user_id);
 } catch (PDOException $e) {
   // exit('接続できませんでした。理由：' . $e->getMessage());
-  $_SESSION['error'] = 'ブログ記事の登録に失敗しました。';
-  header("Location: ./create.php");
+  $_SESSION['error'] = 'ブログ記事の編集に失敗しました。';
+  header("Location: ./edit.php");
 }

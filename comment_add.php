@@ -1,6 +1,5 @@
 <?php
 session_start();
-// データベース接続
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
 $db_account_name = "blog";
 $db_account_password = "blog";
@@ -13,13 +12,11 @@ try {
     exit('接続できませんでした。理由：' . $e->getMessage());
 }
 
-// Postされたものを定義
 $user_id = $_SESSION['id'];
 $blog_id = $_POST['blog_id'];
 $commenter_name = $_POST['commenter_name'];
 $comment_content = $_POST['comment_content'];
 
-// Insert
 $sql = "
 INSERT INTO
 comments(

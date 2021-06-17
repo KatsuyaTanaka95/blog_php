@@ -1,75 +1,88 @@
 <?php
-// データベース接続
+session_start();
+if (!isset($_SESSION['id'])) header("Location: ./login_form.php");
+
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
 $db_account_name = "blog";
 $db_account_password = "blog";
 try {
-  $pdo = new PDO($dsn, $db_account_name, $db_account_password, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'));
+  $pdo = new PDO($dsn, $db_account_name, $db_account_password);
   $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-  $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-  exit('接続できませんでした。理由：' . $e->getMessage());
+} catch (PDOException $Exception) {
+  die('接続エラー：' . $Exception->getMessage());
+}
+try {
+  $sql = "SELECT * FROM blogs ORDER BY created_at DESC";
+  $statement = $pdo->prepare($sql);
+  $statement->execute();
+} catch (PDOException $Exception) {
+  die('接続エラー：' . $Exception->getMessage());
 }
 
-$blog_id = @$_GET["id"];
-$sql = "SELECT * FROM blogs WHERE id = $blog_id";
-$res = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
+$blogsInfoList = $statement->fetchAll(PDO::FETCH_ASSOC);
+$myBlogsInfoList = [];
+foreach ($blogsInfoList as $blogsInfo) {
+  if ($_SESSION['id'] == $blogsInfo['user_id']) $myBlogsInfoList[] = $blogsInfo;
+}
+
 ?>
 
-
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 
 <head>
   <meta charset="utf-8">
   <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="blog.css">
-  <title>マイ記事詳細ページ</title>
+  <title>マイページ</title>
 </head>
 
-<body>
-  <section>
-    <div class="bg-green-300 text-white py-20">
-      <div class="container mx-auto my-6 md:my-24">
-        <div class="w-full justify-center">
-          <div class="container w-full px-4">
-            <div class="flex flex-wrap justify-center">
-              <div class="w-full lg:w-6/12 px-4">
-                <div class="">
-                  <h2 class="mb-12 text-6xl text-center font-bold text-green-800"><?php print(nl2br($res['title'])); ?></h2>
-                </div>
-                <div class="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-white">
-                  <div class="flex-auto p-5 lg:p-10">
-                    <div class="relative w-full mb-3">
-                      <label class="block uppercase text-gray-700 text-xs font-bold mb-2" for="content">投稿日時: <?php print(nl2br($res['created_at'])); ?></label>
-                      <div class="border-0 px-3 py-3 bg-gray-300 text-gray-800 rounded text-sm shadow focus:outline-none w-full">
-                        <?php print(nl2br($res['content'])); ?>
-                      </div>
-                    </div>
-                    <div class="text-right mt-6">
-                      <a href="./edit.php?id=<?= htmlspecialchars($_GET["id"]) ?>">
-                        <button class="bg-yellow-300 text-black mx-auto active:bg-yellow-400 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1" type="submit" style="transition: all 0.15s ease 0s;">編集
-                        </button>
-                      </a>
-                      <a href="./destroy.php?id=<?= htmlspecialchars($_GET["id"]) ?>">
-                        <button class="bg-yellow-300 text-black mx-auto active:bg-yellow-400 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1" type="submit" style="transition: all 0.15s ease 0s;">削除
-                        </button>
-                      </a>
-                      <a href="./mypage.php">
-                        <button class="bg-yellow-300 text-black mx-auto active:bg-yellow-400 text-sm font-bold uppercase px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1" type="submit" style="transition: all 0.15s ease 0s;">マイページへ
-                        </button>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+<div class="w-full">
+  <nav class="bg-white shadow-lg">
+    <div class="md:flex items-center justify-between py-2 px-8 md:px-12">
+      <div class="flex justify-between items-center">
+        <div class="text-2xl font-bold text-gray-800 md:text-3xl">
+          <h1><?php echo $_SESSION['user_name']; ?></h1>
+        </div>
+        <div class="md:hidden">
         </div>
       </div>
+      <div class="flex flex-col md:flex-row hidden md:block -mx-2">
+        <a href="./index.php" class="text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium py-2 px-2 md:mx-2">一覧ページ</a>
+        <a href="./logout.php" class="text-gray-800 rounded hover:bg-gray-900 hover:text-gray-100 hover:font-medium py-2 px-2 md:mx-2">ログアウト</a>
+      </div>
     </div>
-  </section>
+  </nav>
+</div>
+
+<body>
+  <div class="blogs__wraper bg-green-300  py-20 px-20">
+    <div class="ml-8 mb-12">
+      <h2 class="mb-2 px-2 text-6xl font-bold text-green-800">マイページ</h2>
+    </div>
+    <div class="mx-8 my-0">
+      <a href="./create.php">
+        <button class="bg-transparent hover:bg-green-800 text-gray-600 font-semibold hover:text-white py-2 px-4 border border-green-800 hover:border-transparent rounded">
+          新規作成
+        </button>
+      </a>
+    </div>
+    <div class="flex flex-wrap">
+      <?php foreach ($myBlogsInfoList as $myBlogsInfo) : ?>
+        <div class="blogs bg-white w-1/5 m-8">
+          <div class="">
+            <img src="https://images.unsplash.com/photo-1489396160836-2c99c977e970?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60" class="">
+          </div>
+          <div class="p-5">
+            <h1 class="text-2xl font-bold text-green-800 py-2"><?= htmlspecialchars($myBlogsInfo['title']) ?></h1>
+            <p class="bg-white text-sm text-black"><?= htmlspecialchars($myBlogsInfo['created_at']) ?></p>
+            <p class="bg-white text-sm text-black"><?= htmlspecialchars(mb_strimwidth(strip_tags($myBlogsInfo['content']), 0, 15, '…', 'UTF-8')) ?></p>
+            <a href="./myarticledetail.php?id=<?= htmlspecialchars($myBlogsInfo['id']) ?>" class="py-2 px-3 mt-4 px-6 text-white bg-green-500 inline-block rounded">記事詳細へ</a>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
 </body>
 
 </html>

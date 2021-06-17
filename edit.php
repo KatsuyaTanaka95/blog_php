@@ -1,6 +1,10 @@
 <?php
 session_start();
-// データベース接続
+if (isset($_SESSION['error'])) {
+  echo $_SESSION['error'];
+  $_SESSION['error'] = "";
+}
+
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
 $db_account_name = "blog";
 $db_account_password = "blog";
@@ -18,8 +22,6 @@ $sql = "SELECT * FROM blogs WHERE id = $blog_id";
 $blogInfomation = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
 ?>
 
-
-<!-- 編集フォーム -->
 <!DOCTYPE html>
 <html>
 
@@ -32,12 +34,6 @@ $blogInfomation = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
 
 <body>
   <section>
-    <?php
-    if (isset($_SESSION['error'])) {
-      echo $_SESSION['error'];
-      $_SESSION['error'] = "";
-    }
-    ?>
     <div class="bg-green-300 text-white py-20">
       <div class="container mx-auto my-6 md:my-24">
         <div class="w-full justify-center">

@@ -1,5 +1,4 @@
 <?php
-// データベース接続
 $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
 $db_account_name = "blog";
 $db_account_password = "blog";
@@ -12,12 +11,10 @@ try {
   exit('接続できませんでした。理由：' . $e->getMessage());
 }
 
-// Postされたものを定義
 $user_id = $_POST['blog_id'];
 $blog_title = $_POST['blog_title'];
 $content = $_POST['content'];
 
-// Update
 $sql = "
     UPDATE
       blogs

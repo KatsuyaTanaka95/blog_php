@@ -1,11 +1,31 @@
 <?php
 session_start();
-$user_name = $_SESSION['user_name'];
-if (isset($_SESSION['id'])) { //ログインしているとき
-  $msg = 'こんにちは' . htmlspecialchars($user_name, \ENT_QUOTES, 'UTF-8') . 'さん';
-} else { //ログインしていない時
-  header("Location: ./login_form.php");
+if (!isset($_SESSION['id'])) header("Location: ./login_form.php");
+
+$dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
+$db_account_name = "blog";
+$db_account_password = "blog";
+try {
+  $pdo = new PDO($dsn, $db_account_name, $db_account_password);
+  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+} catch (PDOException $Exception) {
+  die('接続エラー：' . $Exception->getMessage());
 }
+try {
+  $sql = "SELECT * FROM blogs ORDER BY created_at DESC";
+  $statement = $pdo->prepare($sql);
+  $statement->execute();
+} catch (PDOException $Exception) {
+  die('接続エラー：' . $Exception->getMessage());
+}
+
+$blogsInfoList = $statement->fetchAll(PDO::FETCH_ASSOC);
+$myBlogsInfoList = [];
+foreach ($blogsInfoList as $blogsInfo) {
+  if ($_SESSION['id'] == $blogsInfo['user_id']) $myBlogsInfoList[] = $blogsInfo;
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -22,7 +42,7 @@ if (isset($_SESSION['id'])) { //ログインしているとき
     <div class="md:flex items-center justify-between py-2 px-8 md:px-12">
       <div class="flex justify-between items-center">
         <div class="text-2xl font-bold text-gray-800 md:text-3xl">
-          <h1><?php echo $msg; ?></h1>
+          <h1><?php echo $_SESSION['user_name']; ?></h1>
         </div>
         <div class="md:hidden">
         </div>
@@ -36,26 +56,6 @@ if (isset($_SESSION['id'])) { //ログインしているとき
 </div>
 
 <body>
-  <?php
-  $dsn = "mysql:host=localhost; dbname=blog; charset=utf8mb4";
-  $db_account_name = "blog";
-  $db_account_password = "blog";
-  try {
-    $pdo = new PDO($dsn, $db_account_name, $db_account_password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-  } catch (PDOException $Exception) {
-    die('接続エラー：' . $Exception->getMessage());
-  }
-  try {
-    $sql = "SELECT * FROM blog.blogs ORDER BY created_at DESC";
-    $stmh = $pdo->prepare($sql);
-    $stmh->execute();
-  } catch (PDOException $Exception) {
-    die('接続エラー：' . $Exception->getMessage());
-  }
-  ?>
-
   <div class="blogs__wraper bg-green-300  py-20 px-20">
     <div class="ml-8 mb-12">
       <h2 class="mb-2 px-2 text-6xl font-bold text-green-800">マイページ</h2>
@@ -68,32 +68,19 @@ if (isset($_SESSION['id'])) { //ログインしているとき
       </a>
     </div>
     <div class="flex flex-wrap">
-
-      <?php
-      while ($row = $stmh->fetch(PDO::FETCH_ASSOC)) {
-        if ($_SESSION['id'] == $row['user_id']) {
-          $limit = 15;
-          $content = mb_strimwidth(strip_tags($row['content']), 0, 15, '…', 'UTF-8');
-      ?>
-
-          <div class="blogs bg-white w-1/5 m-8">
-            <div class="">
-              <img src="https://images.unsplash.com/photo-1489396160836-2c99c977e970?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60" class="">
-            </div>
-            <div class="p-5">
-              <h1 class="text-2xl font-bold text-green-800 py-2"><?= htmlspecialchars($row['title']) ?></h1>
-              <p class="bg-white text-sm text-black"><?= htmlspecialchars($row['created_at']) ?></p>
-              <p class="bg-white text-sm text-black"><?= htmlspecialchars($content) ?></p>
-              <a href="./myarticledetail.php?id=<?= htmlspecialchars($row['id']) ?>" class="py-2 px-3 mt-4 px-6 text-white bg-green-500 inline-block rounded">記事詳細へ</a>
-            </div>
+      <?php foreach ($myBlogsInfoList as $myBlogsInfo) : ?>
+        <div class="blogs bg-white w-1/5 m-8">
+          <div class="">
+            <img src="https://images.unsplash.com/photo-1489396160836-2c99c977e970?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60" class="">
           </div>
-
-      <?php
-        }
-      }
-      $pdo = null;
-      ?>
-
+          <div class="p-5">
+            <h1 class="text-2xl font-bold text-green-800 py-2"><?= htmlspecialchars($myBlogsInfo['title']) ?></h1>
+            <p class="bg-white text-sm text-black"><?= htmlspecialchars($myBlogsInfo['created_at']) ?></p>
+            <p class="bg-white text-sm text-black"><?= htmlspecialchars(mb_strimwidth(strip_tags($myBlogsInfo['content']), 0, 15, '…', 'UTF-8')) ?></p>
+            <a href="./myarticledetail.php?id=<?= htmlspecialchars($myBlogsInfo['id']) ?>" class="py-2 px-3 mt-4 px-6 text-white bg-green-500 inline-block rounded">記事詳細へ</a>
+          </div>
+        </div>
+      <?php endforeach; ?>
     </div>
   </div>
 </body>
